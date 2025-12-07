@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polymarket Test</title>
+    <style>
+        body { font-family: sans-serif; background: #111; color: #fff; padding: 20px; }
+        .card { background: #222; padding: 15px; margin: 10px 0; border-radius: 8px; }
+        .title { font-size: 16px; font-weight: bold; }
+        .tag { background: #444; padding: 2px 8px; border-radius: 4px; font-size: 12px; margin-right: 5px; }
+        #status { padding: 10px; background: #333; margin-bottom: 20px; }
+        .error { color: #f66; }
+        .success { color: #6f6; }
+        button { padding: 10px 20px; background: #6366f1; color: white; border: none; border-radius: 8px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Polymarket API Test</h1>
+    <div id="status">等待中...</div>
+    <button onclick="loadData()">手动加载</button>
+    <div id="list"></div>
+
+    <script>
+        async function loadData() {
+            const status = document.getElementById('status');
+            const list = document.getElementById('list');
+            
+            status.innerHTML = '正在加载...';
+            status.className = '';
+            
+            try {
+                const url = '/api/events?limit=10&closed=false';
+                status.innerHTML += '<br>请求: ' + url;
+                
+                const response = await fetch(url);
+                status.innerHTML += '<br>状态: ' + response.status;
+                
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status);
+                }
+                
+                const data = await response.json();
+                status.innerHTML += '<br>获取: ' + data.length + ' 个事件';
+                status.className = 'success';
+                
+                list.innerHTML = '';
+                data.forEach((event, i) => {
+                    const market = event.markets?.[0];
+                    const tags = event.tags?.slice(0, 3).map(t => '<span class="tag">' + t.label + '</span>').join('') || '';
+                    
+                    list.innerHTML += `
+                        <div class="card">
+                            <div class="title">${i + 1}. ${event.title || 'No title'}</div>
+                            <div style="margin-top: 8px">${tags}</div>
+                            <div style="margin-top: 8px; color: #888; font-size: 14px">
+                                交易量: $${((market?.volumeNum || 0) / 1000).toFixed(0)}K | 
+                                市场数: ${event.markets?.length || 0}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+            } catch (e) {
+                status.innerHTML += '<br><strong>错误: ' + e.message + '</strong>';
+                status.className = 'error';
+                console.error(e);
+            }
+        }
+        
+        // 自动加载
+        loadData();
+    </script>
+</body>
+</html>

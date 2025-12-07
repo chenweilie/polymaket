@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Price Test</title>
+    <style>
+        body { background: #111; color: #fff; font-family: sans-serif; padding: 20px; }
+        .card { background: #222; padding: 15px; margin: 10px 0; border-radius: 8px; }
+        .prices { display: flex; gap: 10px; margin: 10px 0; }
+        .price { flex: 1; padding: 15px; background: #333; border-radius: 8px; text-align: center; }
+        .price.yes { border: 2px solid #22c55e; }
+        .price.no { border: 2px solid #ef4444; }
+        .value { font-size: 28px; font-weight: bold; }
+        .yes .value { color: #22c55e; }
+        .no .value { color: #ef4444; }
+        .stats { display: flex; gap: 10px; }
+        .stat { flex: 1; background: #333; padding: 10px; border-radius: 8px; text-align: center; }
+    </style>
+</head>
+<body>
+    <h1>Polymarket Price Test</h1>
+    <div id="output">Loading...</div>
+    
+    <script>
+        async function test() {
+            const output = document.getElementById('output');
+            try {
+                const res = await fetch('/api/events?limit=5&closed=false');
+                const events = await res.json();
+                
+                let html = '';
+                events.forEach((e, i) => {
+                    const m = e.markets?.[0];
+                    if (!m) return;
+                    
+                    // Parse prices
+                    let yes = 0.5, no = 0.5;
+                    try {
+                        const p = JSON.parse(m.outcomePrices || '[]');
+                        if (p.length >= 2) {
+                            yes = parseFloat(p[0]) || 0;
+                            no = parseFloat(p[1]) || 0;
+                        }
+                    } catch(err) {}
+                    
+                    const vol = m.volumeNum || parseFloat(m.volume) || 0;
+                    const liq = m.liquidityNum || parseFloat(m.liquidity) || 0;
+                    
+                    html += `
+                        <div class="card">
+                            <h3>${i+1}. ${e.title}</h3>
+                            <p style="color:#888;font-size:12px">Raw outcomePrices: ${m.outcomePrices}</p>
+                            <div class="prices">
+                                <div class="price yes">
+                                    <div>Yes</div>
+                                    <div class="value">${(yes * 100).toFixed(0)}¢</div>
+                                </div>
+                                <div class="price no">
+                                    <div>No</div>
+                                    <div class="value">${(no * 100).toFixed(0)}¢</div>
+                                </div>
+                            </div>
+                            <div class="stats">
+                                <div class="stat">
+                                    <div style="font-weight:bold">$${(vol/1000).toFixed(1)}K</div>
+                                    <div style="font-size:12px;color:#888">交易量</div>
+                                </div>
+                                <div class="stat">
+                                    <div style="font-weight:bold">$${(liq/1000).toFixed(1)}K</div>
+                                    <div style="font-size:12px;color:#888">流动性</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                output.innerHTML = html || 'No data';
+            } catch(e) {
+                output.innerHTML = '<p style="color:red">Error: ' + e.message + '</p>';
+            }
+        }
+        test();
+    </script>
+</body>
+</html>

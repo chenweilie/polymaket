@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Debug</title>
+</head>
+<body>
+    <h1>Polymarket API Debug</h1>
+    <div id="result">Testing...</div>
+    <script>
+        async function test() {
+            const result = document.getElementById('result');
+            try {
+                result.innerHTML = 'Fetching API...';
+                const response = await fetch('https://gamma-api.polymarket.com/events?limit=5&closed=false');
+                result.innerHTML += '<br>Response status: ' + response.status;
+                
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status);
+                }
+                
+                const data = await response.json();
+                result.innerHTML += '<br>Got ' + data.length + ' events:';
+                data.forEach((e, i) => {
+                    result.innerHTML += '<br>' + (i+1) + '. ' + e.title;
+                });
+                result.innerHTML += '<br><br><strong style="color:green">API OK!</strong>';
+            } catch (e) {
+                result.innerHTML += '<br><strong style="color:red">Error: ' + e.message + '</strong>';
+                console.error(e);
+            }
+        }
+        test();
+    </script>
+</body>
+</html>
